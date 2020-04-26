@@ -3,6 +3,6 @@
 - Add a machine
 - Delete a machine
 - Search a machine
-- Dislpay all machines
+- Display all machines
 - Save changes
 - Ping machines
