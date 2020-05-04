@@ -35,11 +35,14 @@ _Bool isOctet(int x){
 //fonction qui récupere addresse mac
 void MacSaisi(char mac[6]){
 	int a, b, c, d, e, f, i;
-	do{
+	do{	
 		i=scanf("%x:%x:%x:%x:%x:%x", &a, &b, &c, &d, &e, &f);
-		if(i<6)
+		if(i<6){
 			puts("Adresse incorrecte! Veuillez entrer une bonne adresse!");
-		else if(!(isOctet(a) && isOctet(b) && isOctet(c) && isOctet(d) &&isOctet(e) && isOctet(f)))
+			while(getchar()!='\n');
+				continue;
+		}
+		if(!(isOctet(a) && isOctet(b) && isOctet(c) && isOctet(d) &&isOctet(e) && isOctet(f)))
 			puts("Adresse incorrecte! Veuillez entrer une bonne adresse!");
 		else
 			break;
@@ -57,9 +60,12 @@ void IpSaisi(char ip[4]){
 	int a, b, c, d, i;
 	do{
 		i=scanf("%d.%d.%d.%d",&a,&b,&c,&d); //recupere addresse forma a.b.c.d
-		if(i<4) //verifie addresse complete
+		if(i<4){ //verifie addresse complete
 			puts("Adresse incorrecte! Veuillez entrer une bonne adresse!");
-		else if(!(isOctet(a) && isOctet(b) && isOctet(c) && isOctet(d))) //verifie element est un octet
+			while(getchar()!='\n');
+				continue;
+		}
+		if(!(isOctet(a) && isOctet(b) && isOctet(c) && isOctet(d))) //verifie element est un octet
 			puts("Adresse incorrecte! Veuillez entrer une bonne adresse!");
 		else
 			break;
@@ -91,7 +97,7 @@ void addLogiciel(string* list_logiciel){
 }
 
 //fonction initialiser machine		
-machine *init_machine(){
+machine *initMachine(){
 	machine *m= malloc(sizeof(machine));
 	if(m!=NULL){
 		//récupère nom machine
@@ -132,10 +138,10 @@ machine *init_machine(){
 }
 
 //ajouter machine au parc
-parc *add_machine(parc *list){
+parc *addMachine(parc *list){
 	parc *p=malloc(sizeof(parc));	
 	if(p!=NULL){
-		p->machine=init_machine();//initialiser machine
+		p->machine=initMachine();//initialiser machine
 		p->next=NULL;
 	}
 	if(list == NULL)	//verifie si parc contient aucun machine
@@ -228,26 +234,114 @@ void afficheState(machine *m){
 	puts("");
 }
 
+//fonction affiche machine
+void afficheMachine(machine *m){
+	puts("--------------------------------------------------");
+	afficheName(m);
+	afficheLogicielClient(m);
+	afficheLogicielServer(m);
+	afficheMacAddr(m);
+	afficheIpAddr(m);
+	afficheMask(m);
+	afficheState(m);
+	puts("--------------------------------------------------");
+}
+
+//afficher parc
+void afficheParc(parc *p){
+	puts("Debut de la liste");
+	for(parc *tmp=p; tmp!=NULL; tmp=tmp->next)
+		afficheMachine(tmp->machine);
+	puts("Fin de la liste");
+}
+	
+//fonction recherche machine
+machine *searchMachine(string hostname, parc *p){
+	machine *m=NULL;
+	for (parc *tmp=p; tmp!=NULL; tmp=tmp->next){
+		if((strcmp(tmp->machine->name, hostname))==0){//comparer les noms machines 
+			m=tmp->machine;
+			break;
+		}
+	}
+	return m;
+}
+
+//fonction suprimer machine dans le parc
+parc *deleteMachine(string hostname, parc *p){
+	machine *m =searchMachine(hostname, p);
+	if(m==NULL)
+		printf("La machine: %s n\'existe pas dans le parc!\n", hostname);
+	else{
+		parc *tmp= p;
+		while(tmp!=NULL){
+			if(tmp->machine->name==m->name){
+				for(parc *t=tmp; t!=NULL; t=t->next){
+					if(t->next!=NULL)
+						t->machine=t->next->machine;
+				}
+			}
+			tmp=tmp->next;
+		}
+		for(parc *tmp=p; tmp !=NULL; tmp=tmp->next){
+			if(tmp->next->next==NULL)
+				tmp->next=NULL;
+		}
+		
+		printf("La machine: %s a ete supprimer avec SUCCES!\n", hostname);
+	}
+	return p;
+}
+				
+
 int main(void){
 	parc *list=NULL; //list des machines
-    	list=add_machine(list);
-	list=add_machine(list);
-	list=add_machine(list);
-	for (parc *tmp = list; tmp != NULL; tmp = tmp->next){
-		afficheName(tmp->machine);
-		afficheLogicielClient(tmp->machine);
-		afficheLogicielServer(tmp->machine);
-		afficheMacAddr(tmp->machine);
-		afficheIpAddr(tmp->machine);
-		afficheMask(tmp->machine);
-		afficheState(tmp->machine);
-	}
-
+	machine *m=NULL;
+    	int option, stop=1;
+	char hostname[50];
+	do{
+		puts("***************************************");
+		puts("1: Ajouter une machine au parc");
+		puts("2: Afficher le parc");
+		puts("3: Rechercher une machine");
+		puts("4: Supprimer une machine du parc");
+		puts("***************************************");
+		printf("Que voulez vous faire\t");
+		scanf("%d", &option);
+		switch(option){
+			case 1:
+				list=addMachine(list);
+				break;
+			case 2:
+				afficheParc(list);
+				break;
+			case 3:
+				printf("Entrer le nom de la machine que vous voulez rechercher:\t");
+				scanf("%s", hostname);
+				m =searchMachine(hostname, list);
+				if(m!=NULL)
+					afficheMachine(m);
+				else
+					printf("La machine: %s n\'existe pas dans le parc!\n", hostname);
+				break;
+			case 4:
+				printf("Entrer le nom de la machine que vous voulez supprimer:\t");
+				scanf("%s", hostname);
+				list=deleteMachine(hostname, list);
+				break;
+			default:
+				puts("Option Non disponible!!! Faites un autre choix!");
+				continue;
+		}
+		printf("Voulez-vous continuer? 1:OUI\t 2:NON\t");
+		scanf("%d",&stop);
+	}while(stop==1);
     	while (list != NULL){
 		parc *tmp = list->next;
 		free(list);
 		list = tmp;
 	}
 	//printf("%s\n", list->machine->name);
+	
 	return 0;
 }
