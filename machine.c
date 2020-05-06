@@ -25,11 +25,11 @@ typedef struct parc{
 }parc;
 
 //fonction verifie nombre est un octet
-_Bool isOctet(int x){
+bool isOctet(int x){
 	if(x>=0 && x<256)
-		return 1;
+		return true;
 	else
-		return 0;
+		return false;
 }
 
 //fonction qui récupere addresse mac
@@ -76,29 +76,11 @@ void IpSaisi(char ip[4]){
 	ip[3]=(unsigned char)d;
 }
 
-//fonction ajouter liste logiciel
-void addLogiciel(string* list_logiciel){
-	char logiciel[15];
-	int i,j=0;
-	do{
-		printf("Taper 1 pour ajouter un logiciel:\t");
-		scanf("%d",&i);
-		if(i==1){
-			printf("Entrer le logiciel:\t");
-			scanf("%s", logiciel);
-			if(j!=0)	//j!=0
-				list_logiciel=realloc(list_logiciel, (j+1)*sizeof(string)); //réallouer espace memoire
-			list_logiciel[j]=(string)malloc(strlen(logiciel)+1);
-			if(list_logiciel[j]!=NULL) //allocation réussi
-				strcpy(list_logiciel[j], logiciel); //copier logiciel dans le tableau	
-		}
-		j++;
-	}while(i==1);
-}
 
 //fonction initialiser machine		
 machine *initMachine(){
 	machine *m= malloc(sizeof(machine));
+	int i;
 	if(m!=NULL){
 		//récupère nom machine
 		char name[50];
@@ -106,35 +88,24 @@ machine *initMachine(){
 		scanf("%s",name);
 		strcpy(m->name, name);	//copie nom machine
 
-		//récupère liste logiciel client
-		puts("---Ajouter Logiciels Clients---");
-		m->logiciels_client=(string*) malloc(sizeof(string));//alloue espace pour tableau de string
-		if (m->logiciels_client!=NULL)
-			addLogiciel(m->logiciels_client);	//on initialise liste de logiciel client
-
-		//ajouter les logiciel serveur
-		puts("---Ajouter Logiciels Serveur---");
-		m->logiciels_server=(string*) malloc(sizeof(string));//alloue espace pour tableau de string
-		if (m->logiciels_server!=NULL)
-			addLogiciel(m->logiciels_server);
-
 		//initialise état à false
 		m->state=false;
 		
 		//initialiser address mac
 		printf("Entrer l'addresse Mac(format: x:x:x:x:x:x)\t");
 		MacSaisi(m->MacAddr);
-
-		//initialiser address Ip
-		printf("Entrer une adresse Ip(format: a.b.c.d)\t");
-		IpSaisi(m->IpAddr);
-
-		//initialiser mask
-		printf("Entrer le masque de réseau(format: a.b.c.d)\t");
-		IpSaisi(m->mask);
-	    }
+		
+		//alloue espace pour tableau de string
+		m->logiciels_client=(string*) malloc(sizeof(string));
+		if (m->logiciels_client==NULL)
+			return NULL;
+		
+		//alloue espace pour tableau de string
+		m->logiciels_server=(string*) malloc(sizeof(string));
+		if (m->logiciels_server==NULL)
+			return NULL;		
+	}
 	    return m;
-
 }
 
 //ajouter machine au parc
@@ -236,7 +207,7 @@ void afficheState(machine *m){
 
 //fonction affiche machine
 void afficheMachine(machine *m){
-	puts("--------------------------------------------------");
+	puts("-----------------------------------------------------------------------------");
 	afficheName(m);
 	afficheLogicielClient(m);
 	afficheLogicielServer(m);
@@ -244,7 +215,7 @@ void afficheMachine(machine *m){
 	afficheIpAddr(m);
 	afficheMask(m);
 	afficheState(m);
-	puts("--------------------------------------------------");
+	puts("-----------------------------------------------------------------------------");
 }
 
 //afficher parc
@@ -265,6 +236,155 @@ machine *searchMachine(string hostname, parc *p){
 		}
 	}
 	return m;
+}
+
+//fonction ajouter logiciel à la liste
+void addLogiciel(string *list_logiciel){
+	char logiciel[15];
+	printf("Entrer le logiciel a installer:\t");
+	scanf("%s", logiciel);
+	int i=0;
+	while(list_logiciel[i]!=NULL)
+		i++;
+	list_logiciel[i]=(string)malloc(sizeof(strlen(logiciel)+1)); //Alloue espace correspondant à la taille de l'entrée
+	if(list_logiciel[i]!=NULL){
+		if(i==0) //vérifie si premier logiciel de la liste
+			strcpy(list_logiciel[i], logiciel);	//copie le logiciel dans la liste
+		else{
+			list_logiciel=realloc(list_logiciel, (i+1)*sizeof(string)); //réalloue espace mémoire
+			strcpy(list_logiciel[i], logiciel);
+		}
+	}
+}
+
+//fonction qui vérifie si logiciel existe
+bool existLogiciel(string logiciel, string *list_logiciel){
+	bool exist=false;
+	int i=0;
+	while(list_logiciel[i]!=NULL){
+		if(strcmp(list_logiciel[i], logiciel)==0){
+			exist=true;
+			break;
+		}
+		i++;
+	}
+	return exist;
+}
+
+//fonction supprimer logiciel
+void deleteLogiciel(string *list_logiciel){
+	char logiciel[15];
+	printf("Entrer le nom du logiciel que vous voulez desinstaller\t");
+	scanf("%s", logiciel);
+	if(existLogiciel(logiciel, list_logiciel)){//vérifie logiciel existe
+		int i=0;
+		while(list_logiciel[i]!=NULL){
+			if(strcmp(list_logiciel[i],logiciel)==0){
+				for(int j=i; list_logiciel[j]!=NULL; j++)
+					list_logiciel[j]=list_logiciel[j+1]; //décalage
+			}
+			i++;
+		}
+		printf("\"%s\" Delete SUCCESS\n",logiciel); 
+	}
+	else
+		printf("\"%s\" n'est pas installé\n",logiciel); 
+}
+
+//fonction install logiciel client
+void installLogicielClient(machine *m){
+	addLogiciel(m->logiciels_client);
+	puts("INSTALL SUCCESS!!!");
+}
+
+//fonction install logiciel serceur
+void installLogicielServer(machine *m){
+	addLogiciel(m->logiciels_server);
+	puts("INSTALL SUCCESS!!!");
+}
+
+//fonction désinstaller logiciel client
+void desinstallLogicielClient(machine *m){
+	deleteLogiciel(m->logiciels_client);
+}
+
+//fonction desinstaller logiciel serveur
+void desinstallLogicielServer(machine *m){
+	deleteLogiciel(m->logiciels_server);
+}
+	
+//fonction add machine to network
+void connectMachine(string hostname, parc *p){
+	machine *m=searchMachine(hostname, p);
+	if(m==NULL)
+		printf("La machine: %s n\'existe pas dans le parc!\n", hostname);
+	else{
+		//initialiser address Ip
+		printf("Entrer une adresse Ip(format: a.b.c.d)\t");
+		IpSaisi(m->IpAddr);
+
+		//initialiser mask
+		printf("Entrer le masque de réseau(format: a.b.c.d)\t");
+		IpSaisi(m->mask);
+		m->state=true;
+		printf("La machine: %s a ete connecte au réseau!\n", hostname);
+	}
+}
+
+//foction delete machine to network
+void disconnectMachine(string hostname, parc *p){
+	machine *m=searchMachine(hostname, p);
+	if(m==NULL)
+		printf("La machine: %s n\'existe pas dans le parc!\n", hostname);
+	else{
+		char *ip=m->IpAddr;
+		for(int i=0; i<4; i++)
+			ip[i]=0;
+		char *mask=m->mask;
+		for(int i=0; i<4; i++)
+			mask[i]=0;
+		m->state=false;
+		printf("La machine: %s a ete deconnecte du réseau!\n", hostname);
+	}
+}
+
+//fonction compare addresse ip
+bool ipCmp(char ip1[4], char ip2[4]){
+	bool same=true;
+	for(int i=0; i<4; i++){
+		if(ip1[i]!=ip2[i]){
+			same=false;
+			break;
+		}
+	}
+	return same;
+}
+
+//fonction recherche réseau
+machine *searchReseau(char ip[4], parc *p){
+	machine *m=NULL;
+	parc *tmp=p;
+	while(tmp!=NULL){
+		if(ipCmp(ip, tmp->machine->IpAddr)){
+			m=tmp->machine;
+			break;
+		}
+		tmp=tmp->next;
+	}
+	return m;
+}
+
+//fonction ping
+void ping(char ip[4], machine *m1, parc *p){
+	machine *m2=searchReseau(ip, p);
+	if(m2==NULL || !ipCmp(m1->mask, m2->mask)){
+		for(int i=0; i<5; i++)
+			puts("failed...");	
+	}
+	else{
+		for(int i=0; i<4; i++)
+			puts("Ping SUCCESS...");
+	}
 }
 
 //fonction suprimer machine dans le parc
@@ -300,12 +420,16 @@ int main(void){
     	int option, stop=1;
 	char hostname[50];
 	do{
-		puts("***************************************");
+		system("clear");
+		puts("******************************************************************************");
 		puts("1: Ajouter une machine au parc");
 		puts("2: Afficher le parc");
-		puts("3: Rechercher une machine");
+		puts("3: Rechercher/afficher/ping une machine");
 		puts("4: Supprimer une machine du parc");
-		puts("***************************************");
+		puts("5: Installer/Desinstaller logiciel client/Serveur");
+		puts("6: Connecté machine au réseau");
+		puts("7: Deconnecte machine du reseau");
+		puts("******************************************************************************");
 		printf("Que voulez vous faire\t");
 		scanf("%d", &option);
 		switch(option){
@@ -313,23 +437,94 @@ int main(void){
 				list=addMachine(list);
 				break;
 			case 2:
+				system("clear");
 				afficheParc(list);
 				break;
 			case 3:
+				system("clear");				
 				printf("Entrer le nom de la machine que vous voulez rechercher:\t");
 				scanf("%s", hostname);
 				m =searchMachine(hostname, list);
-				if(m!=NULL)
+				if(m!=NULL){
+					system("clear");
 					afficheMachine(m);
+					int i;
+					puts("1: Ping");
+					puts("2: quit");
+					scanf("%d", &i);
+					if(i==1){
+						char ip[4];
+						printf("Entrer l'adresse à pinger\t");
+						IpSaisi(ip);
+						ping(ip, m, list);
+						break;
+					}
+					else break;
+				}				
 				else
 					printf("La machine: %s n\'existe pas dans le parc!\n", hostname);
 				break;
 			case 4:
+				system("clear");
 				printf("Entrer le nom de la machine que vous voulez supprimer:\t");
 				scanf("%s", hostname);
 				list=deleteMachine(hostname, list);
 				break;
+			case 5:
+				system("clear");
+				printf("INSTALL/DESINSTALL Entrer le nom de la machine:\t");
+				scanf("%s", hostname);
+				m=searchMachine(hostname, list);
+				if(m==NULL)
+					printf("La machine: %s n\'existe pas dans le parc!\n", hostname);
+				else{
+					system("clear");					
+					afficheMachine(m);
+					puts("1: INSTALL logiciel client");
+					puts("2: INSTALL logiciel serveur");
+					puts("3: DESINSTALL logiciel client");
+					puts("4: DESINSTALL lociciel serveur");
+					int i;
+					printf("Votre choix: ");
+					scanf("%d", &i);
+					switch(i){
+						case 1:
+							system("clear");
+							installLogicielClient(m);
+							break;
+						case 2:
+							system("clear");
+							installLogicielServer(m);
+							break;
+						case 3:
+							system("clear");
+							desinstallLogicielClient(m);
+							break;
+						case 4:
+							system("clear");
+							desinstallLogicielServer(m);
+							break;
+						default:
+							printf("Option non disponible\n");
+					}
+					
+				}
+				break;
+						
+			case 6:
+				system("clear");
+				printf("Entrer le nom de la machine que vous voulez connecter:\t");
+				scanf("%s", hostname);
+				connectMachine(hostname, list);
+				break;
+			case 7:
+				system("clear");
+				printf("Entrer le nom de la machine que vous voulez deconnecterr:\t");
+				scanf("%s", hostname);
+				disconnectMachine(hostname, list);
+				break;
 			default:
+				system("clear");
 				puts("Option Non disponible!!! Faites un autre choix!");
 				continue;
 		}
