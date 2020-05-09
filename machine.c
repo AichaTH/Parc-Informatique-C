@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <string.h> //définit fonct manipulation string
 #include <ctype.h>  //définit toupper() et tolower()
-#include <stdbool.h>  
+#include <stdbool.h> 
+#include<time.h>
 
 typedef char* string;
 
@@ -300,7 +301,20 @@ void installLogicielClient(machine *m){
 //fonction install logiciel serceur
 void installLogicielServer(machine *m){
 	addLogiciel(m->logiciels_server);
-	puts("INSTALL SUCCESS!!!");
+	if(existLogiciel("dhcp", m->logiciels_server) && !m->state){ //si on installe serveur dhcp installation
+		//initialiser address Ip
+		printf("Entrer une adresse Ip(format: a.b.c.d)\t");
+		IpSaisi(m->IpAddr);
+
+		//initialiser mask
+		printf("Entrer le masque de réseau(format: a.b.c.d)\t");
+		IpSaisi(m->mask);
+		m->state=true;
+		printf("La machine: %s a ete connecte au réseau!\n", m->name);
+		puts("INSTALL SUCCESS!!!");
+	}
+	else
+		puts("INSTALL SUCCESS!!!");
 }
 
 //fonction désinstaller logiciel client
@@ -313,21 +327,152 @@ void desinstallLogicielServer(machine *m){
 	deleteLogiciel(m->logiciels_server);
 }
 	
+//fonction compare addresse ip
+bool ipCmp(char ip1[4], char ip2[4]){
+	bool same=true;
+	for(int i=0; i<4; i++){
+		if(ip1[i]!=ip2[i]){
+			same=false;
+			break;
+		}
+	}
+	return same;
+}
+
+//fonction recherche addresse ip dans le réseau
+machine *searchReseau(char ip[4], parc *p){
+	machine *m=NULL;
+	parc *tmp=p;
+	while(tmp!=NULL){
+		if(ipCmp(ip, tmp->machine->IpAddr)){
+			m=tmp->machine;
+			break;
+		}
+		tmp=tmp->next;
+	}
+	return m;
+}
+
+//fonction qui cherche adresse Rx
+void ipRx(char ip[4], char mask[4], char ipReseau[4]){
+	for(int i=0; i<4; i++)
+		ipReseau[i]=ip[i] & mask[i]; //ET logique entre les différents bits de l'adresse ip et du masque
+}
+
+//fonction qui cherche broadcast
+void ipBrd(char ip[4], char mask[4], char brcst[4]){
+	char ipReseau[4];
+	//char *mask_bar;
+	ipRx(ip, mask, ipReseau);
+	/*for(int i=0; i<4; i++)
+		mask[i]=~mask[i];*/	//complément à 1 masque
+	for(int i=0; i<4; i++)
+		brcst[i]=(~mask[i]) | ipReseau[i];	//ou inclusif entre cà1 mask et @ Rx
+}
+
+//fonction dhcp
+void dhcp(char ip_client[4], char mask_client[4], machine *serveur, parc *p){
+	unsigned char ipReseau[4];
+	unsigned char brdcst[4];
+	machine *m=NULL;
+	ipRx(serveur->IpAddr, serveur->mask, ipReseau); //@ Rx
+	ipBrd(serveur->IpAddr, serveur->mask, brdcst); //@ brd
+	unsigned char *mask=serveur->mask;	//pointeur sur masque serveur
+	int i=0;
+	puts("Address request...");
+	while(mask[i]==255){//verifier si mask =255 octet @client= octet @ Rx
+		ip_client[i]=ipReseau[i];
+		i++;
+		//printf("%d\n", ip_client[i]);
+	}
+	int a=i;
+	do{
+		int j;
+		if(i<4)
+			j= brdcst[i]-ipReseau[i]; //plage @ hote
+		//printf("j=%d\n",j);
+		ip_client[i]=ipReseau[i]+1+rand()%j; //choix au hasard
+		i++;
+		if(i==4){
+			m=searchReseau(ip_client, p);	//verifie si @ disponible
+			i=a; //réinitialise i avant boucle do while
+		}
+	}while(m==NULL);
+	puts("OKAY!");
+	puts("Mask request...");
+	//initialise mask
+	for(i=0; i<4; i++)
+		mask_client[i]=mask[i];
+	puts("OKAY !");
+}
+
+//fonction cherche serveur dhcp
+machine *serveurDhcp(parc *p){
+	machine *serveur=NULL;
+	parc *tmp=p;
+	while(tmp!=NULL){
+		if(existLogiciel("dhcp",tmp->machine->logiciels_server))
+			serveur=tmp->machine;
+		tmp=tmp->next;
+	}
+	return serveur;
+}
 //fonction add machine to network
 void connectMachine(string hostname, parc *p){
 	machine *m=searchMachine(hostname, p);
+	machine *serveur=serveurDhcp(p);
+	int choix;
 	if(m==NULL)
 		printf("La machine: %s n\'existe pas dans le parc!\n", hostname);
-	else{
-		//initialiser address Ip
-		printf("Entrer une adresse Ip(format: a.b.c.d)\t");
-		IpSaisi(m->IpAddr);
+	else if(serveur==NULL){
+		puts("Il n'y a pas de serveur dhcp disponible dans le parc");
+		printf("Tapez 1 pour renseigner une adresse statique ou un chiffre pour quitter\t");
+		scanf("%d", &choix);
+		//renseigner @ statique
+		if(choix==1){
+			//initialiser address Ip
+			printf("Entrer une adresse Ip(format: a.b.c.d)\t");
+			IpSaisi(m->IpAddr);
 
-		//initialiser mask
-		printf("Entrer le masque de réseau(format: a.b.c.d)\t");
-		IpSaisi(m->mask);
-		m->state=true;
-		printf("La machine: %s a ete connecte au réseau!\n", hostname);
+			//initialiser mask
+			printf("Entrer le masque de réseau(format: a.b.c.d)\t");
+			IpSaisi(m->mask);
+			m->state=true;
+			printf("La machine: %s a ete connecte au réseau!\n", hostname);
+				
+		}
+		else
+			puts("BYE");
+		
+	}
+	//utiliser serveur dhcp
+	else{
+		puts("Serveur Dhcp disponible!");
+		printf("1: Recupérez une adresse de facon dynamique\n2: Renseignez une adresse statique\nautre: quitter\n");
+		scanf("%d", &choix);
+		switch(choix){
+			case 1:
+				puts("Connect Dhcp process...");
+				
+				dhcp(m->IpAddr, m->mask, serveur, p);
+				
+				m->state=true;
+				printf("La machine: %s a ete connecte au réseau!\n", hostname);
+				break;
+			case 2:
+				//initialiser address Ip
+				printf("Entrer une adresse Ip(format: a.b.c.d)\t");
+				IpSaisi(m->IpAddr);
+
+				//initialiser mask
+				printf("Entrer le masque de réseau(format: a.b.c.d)\t");
+				IpSaisi(m->mask);
+				m->state=true;
+				printf("La machine: %s a ete connecte au réseau!\n", hostname);
+				break;
+			default:
+				puts("BYE");
+		}
 	}
 }
 
@@ -346,47 +491,31 @@ void disconnectMachine(string hostname, parc *p){
 		m->state=false;
 		printf("La machine: %s a ete deconnecte du réseau!\n", hostname);
 	}
-}
-
-//fonction compare addresse ip
-bool ipCmp(char ip1[4], char ip2[4]){
-	bool same=true;
-	for(int i=0; i<4; i++){
-		if(ip1[i]!=ip2[i]){
-			same=false;
-			break;
-		}
-	}
-	return same;
-}
-
-//fonction recherche réseau
-machine *searchReseau(char ip[4], parc *p){
-	machine *m=NULL;
-	parc *tmp=p;
-	while(tmp!=NULL){
-		if(ipCmp(ip, tmp->machine->IpAddr)){
-			m=tmp->machine;
-			break;
-		}
-		tmp=tmp->next;
-	}
-	return m;
-}
+}	
 
 //fonction ping
 void ping(char ip[4], machine *m1, parc *p){
 	machine *m2=searchReseau(ip, p);
-	if(m2==NULL || !ipCmp(m1->mask, m2->mask)){
-		for(int i=0; i<5; i++)
-			puts("failed...");	
+	unsigned char ipReseau1[4];
+	unsigned char ipReseau2[4];
+	if(m2!=NULL && m1->state && m2->state){
+		ipRx(m1->IpAddr, m1->mask, ipReseau1);
+		ipRx(m2->IpAddr, m2->mask, ipReseau2);
+		if(ipCmp(ipReseau1, ipReseau2)){
+			for(int i=0; i<4; i++)
+				puts("Ping SUCCESS...");
+		}
+		else{
+			for(int i=0; i<4; i++)
+				puts("Ping FAILED...");
+		}
 	}
 	else{
 		for(int i=0; i<4; i++)
-			puts("Ping SUCCESS...");
+			puts("Ping FAILED...");
 	}
-}
 
+}	
 //fonction suprimer machine dans le parc
 parc *deleteMachine(string hostname, parc *p){
 	machine *m =searchMachine(hostname, p);
@@ -419,6 +548,7 @@ int main(void){
 	machine *m=NULL;
     	int option, stop=1;
 	char hostname[50];
+	srand(time(NULL));
 	do{
 		system("clear");
 		puts("******************************************************************************");
