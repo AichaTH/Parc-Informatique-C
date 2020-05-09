@@ -10,3 +10,5 @@
 - Machine COmparison ---> MachineCmp()
 - Clear Screen ---> System(Clear)
 - Quit
+
+Testons le code et revoyons la partie save 
