@@ -36,6 +36,7 @@ bool isOctet(int x){
 //fonction qui récupere addresse mac
 void MacSaisi(char mac[6]){
 	int a, b, c, d, e, f, i;
+	FILE *fichier;
 	do{	
 		i=scanf("%x:%x:%x:%x:%x:%x", &a, &b, &c, &d, &e, &f);
 		if(i<6){
@@ -49,16 +50,41 @@ void MacSaisi(char mac[6]){
 			break;
 	}while(1);
 	mac[0]=(unsigned char)a;
+	if((fichier= fopen("save.txt","a"))!=NULL){
+		fprintf(fichier, "%X:",a);
+		fclose(fichier);
+	}
 	mac[1]=(unsigned char)b;
+	if((fichier= fopen("save.txt","a"))!=NULL){
+		fprintf(fichier, "%X:",b);
+		fclose(fichier);
+	}
 	mac[2]=(unsigned char)c;
+	if((fichier= fopen("save.txt","a"))!=NULL){
+		fprintf(fichier, "%X:",c);
+		fclose(fichier);
+	}
 	mac[3]=(unsigned char)d;
+	if((fichier= fopen("save.txt","a"))!=NULL){
+		fprintf(fichier, "%X:",d);
+		fclose(fichier);
+	}
 	mac[4]=(unsigned char)e;
+	if((fichier= fopen("save.txt","a"))!=NULL){
+		fprintf(fichier, "%X:",e);
+		fclose(fichier);
+	}
 	mac[5]=(unsigned char)f;
+	if((fichier= fopen("save.txt","a"))!=NULL){
+		fprintf(fichier, "%X\n",f);
+		fclose(fichier);
+	}
 }
 
 //fonction qui récupère addresse Ip
 void IpSaisi(char ip[4]){
 	int a, b, c, d, i;
+	FILE *fichier;
 	do{
 		i=scanf("%d.%d.%d.%d",&a,&b,&c,&d); //recupere addresse forma a.b.c.d
 		if(i<4){ //verifie addresse complete
@@ -72,9 +98,25 @@ void IpSaisi(char ip[4]){
 			break;
 	}while(1);
 	ip[0]=(unsigned char)a;
+	if((fichier= fopen("save.txt","a"))!=NULL){
+		fprintf(fichier, "%d.",a);
+		fclose(fichier);
+	}
 	ip[1]=(unsigned char)b;
+	if((fichier= fopen("save.txt","a"))!=NULL){
+		fprintf(fichier, "%d.",b);
+		fclose(fichier);
+	}
 	ip[2]=(unsigned char)c;
+	if((fichier= fopen("save.txt","a"))!=NULL){
+		fprintf(fichier, "%d.",c);
+		fclose(fichier);
+	}
 	ip[3]=(unsigned char)d;
+	if((fichier= fopen("save.txt","a"))!=NULL){
+		fprintf(fichier, "%d\n",d);
+		fclose(fichier);
+	}
 }
 
 
@@ -82,11 +124,18 @@ void IpSaisi(char ip[4]){
 machine *initMachine(){
 	machine *m= malloc(sizeof(machine));
 	int i;
+	FILE *fichier;
 	if(m!=NULL){
 		//récupère nom machine
 		char name[50];
 		printf("Entrer le nom de la machine:\t");
 		scanf("%s",name);
+		//enregistrement du nom de la machine dans le fichier de sauvegarde
+		if((fichier= fopen("save.txt","a"))!=NULL){
+			fputs("\n********* MACHINE *********\n",fichier);
+			fprintf(fichier, "Hostname: %s\n",name);
+			fclose(fichier);
+		}
 		strcpy(m->name, name);	//copie nom machine
 
 		//initialise état à false
@@ -94,6 +143,10 @@ machine *initMachine(){
 		
 		//initialiser address mac
 		printf("Entrer l'addresse Mac(format: x:x:x:x:x:x)\t");
+		if((fichier= fopen("save.txt","a"))!=NULL){
+			fputs("MAC Address: ", fichier);
+			fclose(fichier); 
+		}
 		MacSaisi(m->MacAddr);
 		
 		//alloue espace pour tableau de string
@@ -150,7 +203,7 @@ void afficheLogicielClient(machine *m){
 //fonction affiche liste logiciel serveur
 void afficheLogicielServer(machine *m){
 	string* serveur=m->logiciels_server;
-	printf("Liste Logiciels serveurs installés sur cette machine: ");
+	printf("Softwares installed in this machine: ");
 	for(int j=0; serveur[j]!=NULL; j++){
 		printf("%s",serveur[j]);
 		if(serveur[j+1]!=NULL)
@@ -200,9 +253,9 @@ void afficheMask(machine *m){
 void afficheState(machine *m){
 	printf("State:\t");
 	if(m->state)
-		printf("Connecté!");
+		printf("CONNECTED!");
 	else
-		printf("Non connecté!");
+		printf("NOT CONNECTED!");
 	puts("");
 }
 
@@ -221,10 +274,11 @@ void afficheMachine(machine *m){
 
 //afficher parc
 void afficheParc(parc *p){
-	puts("Debut de la liste");
-	for(parc *tmp=p; tmp!=NULL; tmp=tmp->next)
-		afficheMachine(tmp->machine);
-	puts("Fin de la liste");
+	puts("____START____");
+	// for(parc *tmp=p; tmp!=NULL; tmp=tmp->next)
+	// 	afficheMachine(tmp->machine);
+	system("cat save.txt");
+	puts("\n____END____");
 }
 	
 //fonction recherche machine
@@ -242,7 +296,8 @@ machine *searchMachine(string hostname, parc *p){
 //fonction ajouter logiciel à la liste
 void addLogiciel(string *list_logiciel){
 	char logiciel[15];
-	printf("Entrer le logiciel a installer:\t");
+	FILE *fichier;
+	printf("Enter the software you want to install :\t");
 	scanf("%s", logiciel);
 	int i=0;
 	while(list_logiciel[i]!=NULL)
@@ -255,6 +310,14 @@ void addLogiciel(string *list_logiciel){
 			list_logiciel=realloc(list_logiciel, (i+1)*sizeof(string)); //réalloue espace mémoire
 			strcpy(list_logiciel[i], logiciel);
 		}
+		if((fichier= fopen("save.txt","a"))!=NULL){
+		fprintf(fichier,"%s,	", logiciel);
+		fclose(fichier);
+		}
+	}
+	if((fichier= fopen("save.txt","a"))!=NULL){
+		fputs("\n",fichier);
+		fclose(fichier);
 	}
 }
 
@@ -275,7 +338,7 @@ bool existLogiciel(string logiciel, string *list_logiciel){
 //fonction supprimer logiciel
 void deleteLogiciel(string *list_logiciel){
 	char logiciel[15];
-	printf("Entrer le nom du logiciel que vous voulez desinstaller\t");
+	printf("Enter the name of the software you want to delete\t");
 	scanf("%s", logiciel);
 	if(existLogiciel(logiciel, list_logiciel)){//vérifie logiciel existe
 		int i=0;
@@ -286,16 +349,16 @@ void deleteLogiciel(string *list_logiciel){
 			}
 			i++;
 		}
-		printf("\"%s\" Delete SUCCESS\n",logiciel); 
+		printf("\"%s\" SUCCESSFULLY DELETED !!!\n",logiciel); 
 	}
 	else
-		printf("\"%s\" n'est pas installé\n",logiciel); 
+		printf(" Sorry but \"%s\" is not installed in this machine !\n",logiciel); 
 }
 
 //fonction install logiciel client
 void installLogicielClient(machine *m){
 	addLogiciel(m->logiciels_client);
-	puts("INSTALL SUCCESS!!!");
+	puts("SUCCESSFULLY INSTALLED !!!");
 }
 
 //fonction install logiciel serceur
@@ -303,18 +366,18 @@ void installLogicielServer(machine *m){
 	addLogiciel(m->logiciels_server);
 	if(existLogiciel("dhcp", m->logiciels_server) && !m->state){ //si on installe serveur dhcp installation
 		//initialiser address Ip
-		printf("Entrer une adresse Ip(format: a.b.c.d)\t");
+		printf("Enter an IP Address (format: a.b.c.d)\n");
 		IpSaisi(m->IpAddr);
 
 		//initialiser mask
-		printf("Entrer le masque de réseau(format: a.b.c.d)\t");
+		printf("Enter a subnet mask (format: a.b.c.d)\n");
 		IpSaisi(m->mask);
 		m->state=true;
-		printf("La machine: %s a ete connecte au réseau!\n", m->name);
-		puts("INSTALL SUCCESS!!!");
+		printf("THE MACHINE  %s  HAS BEEN SUCCESSFULLY CONNECTED !\n", m->name);
+		puts("INSTALLATION COMPLETED !!!");
 	}
 	else
-		puts("INSTALL SUCCESS!!!");
+		puts("INSTALLATION COMPLETED !!!");
 }
 
 //fonction désinstaller logiciel client
@@ -375,13 +438,23 @@ void dhcp(char ip_client[4], char mask_client[4], machine *serveur, parc *p){
 	unsigned char ipReseau[4];
 	unsigned char brdcst[4];
 	machine *m=NULL;
+	FILE *fichier;
 	ipRx(serveur->IpAddr, serveur->mask, ipReseau); //@ Rx
 	ipBrd(serveur->IpAddr, serveur->mask, brdcst); //@ brd
 	unsigned char *mask=serveur->mask;	//pointeur sur masque serveur
 	int i=0;
-	puts("Address request...");
+	puts("CONNECTION TO DHCP SERVER... WELL ESTABILISHED\n");
+	puts("ADDRESS REQUEST IN PROCESS...\t");
+	if ((fichier=fopen("save.txt","a"))!=NULL){
+		fputs("IP Address: ",fichier);
+		fclose(fichier);
+	}
 	while(mask[i]==255){//verifier si mask =255 octet @client= octet @ Rx
 		ip_client[i]=ipReseau[i];
+		if ((fichier=fopen("save.txt","a"))!=NULL){
+			fprintf(fichier,"%d.", ip_client[i]);
+			fclose(fichier);
+		}
 		i++;
 		//printf("%d\n", ip_client[i]);
 	}
@@ -392,17 +465,36 @@ void dhcp(char ip_client[4], char mask_client[4], machine *serveur, parc *p){
 			j= brdcst[i]-ipReseau[i]; //plage @ hote
 		//printf("j=%d\n",j);
 		ip_client[i]=ipReseau[i]+1+rand()%j; //choix au hasard
+		if ((fichier=fopen("save.txt","a"))!=NULL){
+			fprintf(fichier,"%d.", ip_client[i]);
+			fclose(fichier);
+		}
 		i++;
 		if(i==4){
 			m=searchReseau(ip_client, p);	//verifie si @ disponible
 			i=a; //réinitialise i avant boucle do while
 		}
 	}while(m==NULL);
-	puts("OKAY!");
-	puts("Mask request...");
+	
+	puts("SUCCESSFULL !!!\n");
+	puts("SUBNET MASK REQUEST IN PROCESS...\n");
 	//initialise mask
+	if ((fichier=fopen("save.txt","a"))!=NULL){
+		fputs("Subtnet Mask: ",fichier);
+		fclose(fichier);
+	}
 	for(i=0; i<4; i++)
 		mask_client[i]=mask[i];
+	if ((fichier=fopen("save.txt","a"))!=NULL){
+		if(i!=4){
+		fprintf(fichier,"%d.", mask_client[i]);
+		fclose(fichier);
+		}
+		else{
+		fprintf(fichier,"%d",mask_client[i]);
+		fclose(fichier);
+		}
+	}
 	puts("OKAY !");
 }
 
@@ -421,24 +513,37 @@ machine *serveurDhcp(parc *p){
 void connectMachine(string hostname, parc *p){
 	machine *m=searchMachine(hostname, p);
 	machine *serveur=serveurDhcp(p);
+	FILE *fichier;
 	int choix;
 	if(m==NULL)
-		printf("La machine: %s n\'existe pas dans le parc!\n", hostname);
+		printf("SORRY BUT THE MACHINE  %s  DOES NOT EXIST IN THE INFRASTRUCTURE!\n", hostname);
 	else if(serveur==NULL){
-		puts("Il n'y a pas de serveur dhcp disponible dans le parc");
-		printf("Tapez 1 pour renseigner une adresse statique ou un chiffre pour quitter\t");
+		puts("DHCP SERVER NOT AVAILABLE \n");
+		printf("Tap 1 for a static address or else for exit\n");
 		scanf("%d", &choix);
 		//renseigner @ statique
 		if(choix==1){
 			//initialiser address Ip
-			printf("Entrer une adresse Ip(format: a.b.c.d)\t");
+			printf("Enter an IP Address (format: a.b.c.d)\n");
+			if ((fichier=fopen("save.txt","a"))!=NULL){
+				fputs("IP Address: ",fichier);
+				fclose(fichier);
+			}		
 			IpSaisi(m->IpAddr);
 
 			//initialiser mask
-			printf("Entrer le masque de réseau(format: a.b.c.d)\t");
+			printf("Enter the Subnet Mask (format: a.b.c.d)\n");
+			if ((fichier=fopen("save.txt","a"))!=NULL){
+				fputs("Subtnet Mask: ",fichier);
+				fclose(fichier);
+			}
 			IpSaisi(m->mask);
 			m->state=true;
-			printf("La machine: %s a ete connecte au réseau!\n", hostname);
+			if ((fichier=fopen("save.txt","a"))!=NULL){
+				fputs("State: CONNECTED\n",fichier);
+				fclose(fichier);
+			}
+			printf("THE MACHINE  %s   HAS BEEN WELL CONNECTED !\n", hostname);
 				
 		}
 		else
@@ -447,17 +552,21 @@ void connectMachine(string hostname, parc *p){
 	}
 	//utiliser serveur dhcp
 	else{
-		puts("Serveur Dhcp disponible!");
-		printf("1: Recupérez une adresse de facon dynamique\n2: Renseignez une adresse statique\nautre: quitter\n");
+		puts("DHCP SERVER AVAILABLE !\n");
+		printf("1: obtain an address dynamically \n2: enter a static address \n else: quit\n");
 		scanf("%d", &choix);
 		switch(choix){
 			case 1:
-				puts("Connect Dhcp process...");
+				puts("DHCP SERVER CONNECTION TRIAL ...\n");
 				
 				dhcp(m->IpAddr, m->mask, serveur, p);
 				
 				m->state=true;
-				printf("La machine: %s a ete connecte au réseau!\n", hostname);
+				if ((fichier=fopen("save.txt","a"))!=NULL){
+					fputs("State: CONNECTED\n",fichier);
+					fclose(fichier);
+				}
+				printf("THE MACHINE  %s  HAS BEEN SUCCESSFULLY CONNECTED !\n", hostname);
 				break;
 			case 2:
 				//initialiser address Ip
@@ -468,7 +577,11 @@ void connectMachine(string hostname, parc *p){
 				printf("Entrer le masque de réseau(format: a.b.c.d)\t");
 				IpSaisi(m->mask);
 				m->state=true;
-				printf("La machine: %s a ete connecte au réseau!\n", hostname);
+				if ((fichier=fopen("save.txt","a"))!=NULL){
+					fputs("State: CONNECTED\n",fichier);
+					fclose(fichier);
+				}
+				printf("THE MACHINE  %s  HAS BEEN WELL CONNECTED !\n", hostname);
 				break;
 			default:
 				puts("BYE");
@@ -480,7 +593,7 @@ void connectMachine(string hostname, parc *p){
 void disconnectMachine(string hostname, parc *p){
 	machine *m=searchMachine(hostname, p);
 	if(m==NULL)
-		printf("La machine: %s n\'existe pas dans le parc!\n", hostname);
+		printf("SORRY BUT THE MACHINE  %s  DOES NOT EXIST !\n", hostname);
 	else{
 		char *ip=m->IpAddr;
 		for(int i=0; i<4; i++)
@@ -489,7 +602,7 @@ void disconnectMachine(string hostname, parc *p){
 		for(int i=0; i<4; i++)
 			mask[i]=0;
 		m->state=false;
-		printf("La machine: %s a ete deconnecte du réseau!\n", hostname);
+		printf("THE MACHINE  %s  HAS BEEN WELL DISCONNECTED !\n", hostname);
 	}
 }	
 
@@ -503,24 +616,25 @@ void ping(char ip[4], machine *m1, parc *p){
 		ipRx(m2->IpAddr, m2->mask, ipReseau2);
 		if(ipCmp(ipReseau1, ipReseau2)){
 			for(int i=0; i<4; i++)
-				puts("Ping SUCCESS...");
+				printf("%d packet transmitted \n",i);
+				puts("\nPing SUCCESSED !!!\n PING STATISTICS ----\n 4 packets transmitted, 4 received, 0%% packet loss ");
 		}
 		else{
 			for(int i=0; i<4; i++)
-				puts("Ping FAILED...");
+				printf("%d packet transmitted \n",i);
+				puts("\nPing FAILED !!!\n PING STATISTICS ----\n 4 packets transmitted, 0 received, 100%% packet loss ");
 		}
 	}
 	else{
 		for(int i=0; i<4; i++)
-			puts("Ping FAILED...");
-	}
-
+				puts("\nADDRESS UNREACHABLE !!!\n PING STATISTICS ----\n 4 packets transmitted, 0 received, 100%% packet loss ");	
+		}
 }	
 //fonction suprimer machine dans le parc
 parc *deleteMachine(string hostname, parc *p){
 	machine *m =searchMachine(hostname, p);
 	if(m==NULL)
-		printf("La machine: %s n\'existe pas dans le parc!\n", hostname);
+		printf("SORRY BUT THE MACHINE  %s   DOES NOT EXIST !\n", hostname);
 	else{
 		parc *tmp= p;
 		while(tmp!=NULL){
@@ -537,7 +651,7 @@ parc *deleteMachine(string hostname, parc *p){
 				tmp->next=NULL;
 		}
 		
-		printf("La machine: %s a ete supprimer avec SUCCES!\n", hostname);
+		printf("THE MACHINE   %s   HAS BEEN SUCCESFULLY DELETED !\n", hostname);
 	}
 	return p;
 }
@@ -549,21 +663,36 @@ int main(void){
     	int option, stop=1;
 	char hostname[50];
 	srand(time(NULL));
+	system("clear");
+	puts("\t\t **************************************************\n");
+	puts("\t\t WELCOME TO OUR C LANGUAGE PROGRAMMATION PROJECT\n");
+	puts("\t\t 					DESIGNED BY \n");
+	puts("\t\t 		--> FAMARA BADJI\n");
+	puts("\t\t 		--> FATOUMATA LAMARANA BARRY\n");
+	puts("\t\t 		--> HAWA MAMADOU DIA\n");
+	puts("\t\t 		--> MOHAMADOU LAMINE FALL\n");
+	puts("\t\t 		--> FATOU MBOW\n");
+	puts("\t\t 	 	--> ASTOU THIOYE\n");
+	puts("\t\t **************************************************\n\n\n");
+
+	puts("THIS IS ABOUT A SIMULATION OF A COMPUTER INFRASTRUCTURE  WITH SOME FEATURES\n LIKE SOFTWARE INSTALLATION, DHCP REQUEST, PING...\n\n ");
+
 	do{
-		system("clear");
-		puts("******************************************************************************");
-		puts("1: Ajouter une machine au parc");
-		puts("2: Afficher le parc");
-		puts("3: Rechercher/afficher/ping une machine");
-		puts("4: Supprimer une machine du parc");
-		puts("5: Installer/Desinstaller logiciel client/Serveur");
-		puts("6: Connecté machine au réseau");
-		puts("7: Deconnecte machine du reseau");
-		puts("******************************************************************************");
-		printf("Que voulez vous faire\t");
+
+		puts("******************************************************************************\n");
+		puts("1: Add a machin\n");
+		puts("2: Global view of the infrastructure\n");
+		puts("3: Search/view/ping a machine\n");
+		puts("4: Delete a machine \n");
+		puts("5: Install/Uninstall a Client/Server Software\n");
+		puts("6: Connect a machine to the network\n");
+		puts("7: Disconnect a machine from the network\n");
+		puts("******************************************************************************\n");
+		printf("PLEASE MAKE A CHOICE\n");
 		scanf("%d", &option);
 		switch(option){
 			case 1:
+				system("clear");
 				list=addMachine(list);
 				break;
 			case 2:
@@ -572,7 +701,7 @@ int main(void){
 				break;
 			case 3:
 				system("clear");				
-				printf("Entrer le nom de la machine que vous voulez rechercher:\t");
+				printf("Enter the name of the machine you want to ad.d :\n");
 				scanf("%s", hostname);
 				m =searchMachine(hostname, list);
 				if(m!=NULL){
@@ -580,11 +709,11 @@ int main(void){
 					afficheMachine(m);
 					int i;
 					puts("1: Ping");
-					puts("2: quit");
+					puts("2: Quit");
 					scanf("%d", &i);
 					if(i==1){
 						char ip[4];
-						printf("Entrer l'adresse à pinger\t");
+						printf("Which Address do you want to to reach ? (format a.b.c.d)\n");
 						IpSaisi(ip);
 						ping(ip, m, list);
 						break;
@@ -592,28 +721,28 @@ int main(void){
 					else break;
 				}				
 				else
-					printf("La machine: %s n\'existe pas dans le parc!\n", hostname);
+					printf("SORRY BUT THE MACHINE  %s  DOES NOT EXIST !\n", hostname);
 				break;
 			case 4:
 				system("clear");
-				printf("Entrer le nom de la machine que vous voulez supprimer:\t");
+				printf("Enter the name of the machine you want to delete:\n");
 				scanf("%s", hostname);
 				list=deleteMachine(hostname, list);
 				break;
 			case 5:
 				system("clear");
-				printf("INSTALL/DESINSTALL Entrer le nom de la machine:\t");
+				printf("Enter the name of the machine in which you want to install/uninstall: \n");
 				scanf("%s", hostname);
 				m=searchMachine(hostname, list);
 				if(m==NULL)
-					printf("La machine: %s n\'existe pas dans le parc!\n", hostname);
+					printf("SORRY BUT THE MACHINE  %s  DOES NOT EXIST !\n", hostname);
 				else{
 					system("clear");					
 					afficheMachine(m);
-					puts("1: INSTALL logiciel client");
-					puts("2: INSTALL logiciel serveur");
-					puts("3: DESINSTALL logiciel client");
-					puts("4: DESINSTALL lociciel serveur");
+					puts("1: INSTALL a client software\n");
+					puts("2: INSTALL a server software\n");
+					puts("3: UNINSTALL a client software\n");
+					puts("4: UNINSTALL a server software");
 					int i;
 					printf("Votre choix: ");
 					scanf("%d", &i);
@@ -635,7 +764,7 @@ int main(void){
 							desinstallLogicielServer(m);
 							break;
 						default:
-							printf("Option non disponible\n");
+							printf("OPTION NOT AVAILABLE\n");
 					}
 					
 				}
@@ -643,22 +772,22 @@ int main(void){
 						
 			case 6:
 				system("clear");
-				printf("Entrer le nom de la machine que vous voulez connecter:\t");
+				printf("Enter the name of the machine that you want to connect:\n");
 				scanf("%s", hostname);
 				connectMachine(hostname, list);
 				break;
 			case 7:
 				system("clear");
-				printf("Entrer le nom de la machine que vous voulez deconnecterr:\t");
+				printf("Enter the name of the machine that you want to disconnect:\n");
 				scanf("%s", hostname);
 				disconnectMachine(hostname, list);
 				break;
 			default:
 				system("clear");
-				puts("Option Non disponible!!! Faites un autre choix!");
+				puts("OPTION NOT AVAILABLE !");
 				continue;
 		}
-		printf("Voulez-vous continuer? 1:OUI\t 2:NON\t");
+		printf("DO YOU WANT TO CONTINUE ? 1:YES\t 2:NO\t");
 		scanf("%d",&stop);
 	}while(stop==1);
     	while (list != NULL){
