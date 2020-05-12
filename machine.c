@@ -335,10 +335,11 @@ void desinstallLogicielServer(machine *m){
 void Store(parc *list){
 	char* storeFile={"Store.dat"};
 	FILE *file;
+	parc *head = list;
 	if((file=fopen(storeFile,"awb"))){
-		while(list!=NULL){
-			fwrite(list, sizeof(parc), 1, file); //copy a node of the linked list
-			list=list->next; //next node
+		while(head!=NULL){
+			fwrite(head, sizeof(parc), 1, file); //copy a node of the linked list
+			head=head->next; //next node
 		}
 		fclose(file);
 	}
@@ -349,22 +350,25 @@ void Store(parc *list){
 parc *backUp(){
 	char* storeFile={"Store.dat"};
 	FILE *file;
-	parc *tmp=malloc(sizeof(parc));
-	parc *list, tmp1;
+	parc* tmp=malloc(sizeof(parc));
+	parc* list=malloc(sizeof(parc));
+	parc* bufs=malloc(sizeof(parc));
+	parc* tmpFile=malloc(sizeof(parc));
 	if(tmp==NULL)
 		printf("MEMORY ALLOCATION ERROR !!\n");
 	else{
 		if((file=fopen(storeFile,"rb"))){
-			fread(list, sizeof(parc), 1, file);
-			tmp=list;		//get the first item
-			while(fread(&tmp1, sizeof(parc), 1, file)){
-				//tmp->next= malloc(sizeof(parc));
-				tmp=tmp->next;
-				*tmp=tmp1;
-				tmp->next=NULL;
+			fread(tmp, sizeof(parc), 1, file);
+			list=tmp;		//get the first item
+			bufs=list;		//copy it in a kind of buffer
+			while(fread(tmpFile, sizeof(parc), 1, file)){
+				bufs->next=malloc(sizeof(parc));
+				bufs=bufs->next;
+				bufs=tmpFile;
+				bufs->next=NULL;
 			}
 			fclose(file);
-			return list;
+			return tmp;
 		}
 		else
 		printf("FAILED TO FIND A BACKUP FILE...\n");	
@@ -736,6 +740,7 @@ int main(void){
 				puts("LOOKING FOR BACKUP...\n");
 				system("sleep 3");
 				list =backUp();
+				puts("WELL DONE !!\n");
 				break;
 			default:
 				system("clear");
