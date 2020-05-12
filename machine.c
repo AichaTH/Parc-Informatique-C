@@ -126,12 +126,9 @@ parc *addMachine(parc *list){
 	else{ //sinon
 		parc *tmp=list;	//pointeur sur list machine
 		while(tmp->next!=NULL)	//verifie prochain machine existe1
-
 			tmp=tmp->next;
 		tmp->next=p;
-		tmp=tmp->next;
-	}
-		//save machine data in a binary file
+		}
 	return list;
 }
 
@@ -343,7 +340,6 @@ void Store(parc *list){
 			fwrite(list, sizeof(parc), 1, file); //copy a node of the linked list
 			list=list->next; //next node
 		}
-		//printf("%d MACHINES HAD BEEN SAVED !\n", list->count);
 		fclose(file);
 	}
 	else
@@ -362,7 +358,7 @@ parc *backUp(){
 			fread(list, sizeof(parc), 1, file);
 			tmp=list;		//get the first item
 			while(fread(&tmp1, sizeof(parc), 1, file)){
-				tmp->next= malloc(sizeof(parc));
+				//tmp->next= malloc(sizeof(parc));
 				tmp=tmp->next;
 				*tmp=tmp1;
 				tmp->next=NULL;
@@ -411,10 +407,7 @@ void ipRx(char ip[4], char mask[4], char ipReseau[4]){
 //fonction qui cherche broadcast
 void ipBrd(char ip[4], char mask[4], char brcst[4]){
 	char ipReseau[4];
-	//char *mask_bar;
 	ipRx(ip, mask, ipReseau);
-	/*for(int i=0; i<4; i++)
-		mask[i]=~mask[i];*/	//complément à 1 masque
 	for(int i=0; i<4; i++)
 		brcst[i]=(~mask[i]) | ipReseau[i];	//ou inclusif entre cà1 mask et @ Rx
 }
@@ -430,18 +423,16 @@ void dhcp(char ip_client[4], char mask_client[4], machine *serveur, parc *p){
 	int i=0;
 	puts("CONNECTION TO DHCP SERVER... WELL ESTABILISHED\n");
 	puts("ADDRESS REQUEST IN PROCESS...\t");
-	system("sleep 5");
+	system("sleep 3");
 	while(mask[i]==255){//verifier si mask =255 octet @client= octet @ Rx
-		ip_client[i]=ipReseau[i];
+		ip_client[i]=ipReseau[i];	//id-Rx
 		i++;
-		//printf("%d\n", ip_client[i]);
 	}
 	int a=i;
 	do{
 		int j;
 		if(i<4)
 			j= brdcst[i]-ipReseau[i]; //plage @ hote
-		//printf("j=%d\n",j);
 		ip_client[i]=ipReseau[i]+1+rand()%j; //choix au hasard
 		i++;
 
@@ -467,6 +458,7 @@ machine *serveurDhcp(parc *p){
 	while(tmp!=NULL){
 		if(existLogiciel("dhcp",tmp->machine->logiciels_server))
 			serveur=tmp->machine;
+			break;
 		tmp=tmp->next;
 	}
 	return serveur;
@@ -507,7 +499,7 @@ void connectMachine(string hostname, parc *p){
 		scanf("%d", &choix);
 		switch(choix){
 			case 1:
-				puts("DHCP SERVER CONNECTION TRIAL ...\n");
+				puts("TRYING CONNECTION TO DHCP SERVER...\n");
 				system("sleep 3");
 				
 				dhcp(m->IpAddr, m->mask, serveur, p);
@@ -558,17 +550,17 @@ void ping(char ip[4], machine *m1, parc *p){
 	if(m2!=NULL && m1->state && m2->state){
 		ipRx(m1->IpAddr, m1->mask, ipReseau1);
 		ipRx(m2->IpAddr, m2->mask, ipReseau2);
-		if(ipCmp(ipReseau1, ipReseau2)){
+		if(ipCmp(ipReseau1, ipReseau2)){	//Network-id comparison
 			for(int i=0; i<4; i++){
 				printf("%d packets transmitted \n",i);
-				system("sleep 2");
+				system("sleep 1");
 			}
 				puts("\nPing SUCCESSED !!!\n \nPING STATISTICS ----\n 4 packets transmitted, 4 received, 0% packet loss ");
 		}
 		else{
 			for(int i=0; i<4; i++){
 				printf("%d packet transmitted \n",i);
-				system("sleep 2");
+				system("sleep 1");
 			}
 				puts("\nPing FAILED !!!\n\n PING STATISTICS ----\n 4 packets transmitted, 0 received, 100% packet loss ");
 		}
@@ -738,7 +730,7 @@ int main(void){
 				system("clear");
 				Store(list);
 				stop=0;
-				break;
+				break; //XALAAT SII DENGA
 			case 9:
 				system("clear");
 				puts("LOOKING FOR BACKUP...\n");
@@ -757,8 +749,6 @@ int main(void){
 		parc *tmp = list->next;
 		free(list);
 		list = tmp;
-	}
-	//printf("%s\n", list->machine->name);
-	
+	}	
 	return 0;
 }
