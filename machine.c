@@ -24,7 +24,6 @@ typedef struct machine{
 //definition structure parc
 typedef struct parc{
 	machine* machine;
-	int count;
 	struct parc* next;
 }parc;
 
@@ -118,14 +117,13 @@ parc *addMachine(parc *list){
 	parc *p=malloc(sizeof(parc));	
 	if(p!=NULL){
 		p->machine=initMachine();//initialiser machine
-		p->count++;				 //number of machines
 		p->next=NULL;
 	}
 	if(list == NULL)	//verifie si parc contient aucune machine
 		list=p;
 	else{ //sinon
 		parc *tmp=list;	//pointeur sur list machine
-		while(tmp->next!=NULL)	//verifie prochain machine existe1
+		while(tmp->next!=NULL)	//verifie prochain machine existe
 			tmp=tmp->next;
 		tmp->next=p;
 		}
@@ -335,40 +333,61 @@ void desinstallLogicielServer(machine *m){
 void Store(parc *list){
 	char* storeFile={"Store.dat"};
 	FILE *file;
-	if((file=fopen(storeFile,"awb"))){
-		while(list!=NULL){
-			fwrite(list, sizeof(parc), 1, file); //copy a node of the linked list
-			list=list->next; //next node
+	parc *tmp=list;
+	if((file=fopen(storeFile,"wb"))){
+		while(tmp!=NULL){
+			fwrite(tmp->machine, sizeof(machine), 1, file); //copy a node of the linked list
+			tmp=tmp->next; //next node
 		}
 		fclose(file);
 	}
 	else
 		printf("FAILED TO CREATE OR OPEN THE STORE FILE");
+	/*while (list != NULL){
+		parc *tmp = list->next;
+		free(list);
+		list = tmp;
+	}*/	
 }
 	
 parc *backUp(){
+	parc *list=NULL;
 	char* storeFile={"Store.dat"};
 	FILE *file;
-	parc *tmp=malloc(sizeof(parc));
-	parc *list, tmp1;
-	if(tmp==NULL)
+	machine *m=malloc(sizeof(machine));
+	parc *p=malloc(sizeof(parc));
+	if(p==NULL)
 		printf("MEMORY ALLOCATION ERROR !!\n");
 	else{
 		if((file=fopen(storeFile,"rb"))){
-			fread(list, sizeof(parc), 1, file);
-			tmp=list;		//get the first item
-			while(fread(&tmp1, sizeof(parc), 1, file)){
-				//tmp->next= malloc(sizeof(parc));
-				tmp=tmp->next;
-				*tmp=tmp1;
-				tmp->next=NULL;
+			while(fread(m, sizeof(machine), 1, file)>0){
+				if(m!=NULL){
+					afficheName(m);
+					afficheMacAddr(m);
+					afficheIpAddr(m);
+					//afficheLogicielClient(m);
+					p->machine=m;
+					p->next=NULL;
+					if(list==NULL)
+						list=p;
+					else{
+						parc *tmp=list;
+						while(tmp->next!=NULL)
+							tmp=tmp->next;
+						tmp->next=p;
+						//tmp=tmp->next;
+						//tmp->next=NULL;
+					}
+				}
 			}
+			//afficheParc(list);
 			fclose(file);
-			return list;
+			//return list;
 		}
 		else
 		printf("FAILED TO FIND A BACKUP FILE...\n");	
 	}
+	return list;
 }
 
 	
@@ -456,9 +475,10 @@ machine *serveurDhcp(parc *p){
 	machine *serveur=NULL;
 	parc *tmp=p;
 	while(tmp!=NULL){
-		if(existLogiciel("dhcp",tmp->machine->logiciels_server))
+		if(existLogiciel("dhcp",tmp->machine->logiciels_server)){
 			serveur=tmp->machine;
 			break;
+		}
 		tmp=tmp->next;
 	}
 	return serveur;
@@ -579,7 +599,7 @@ parc *deleteMachine(string hostname, parc *p){
 	else{
 		parc *tmp= p;
 		while(tmp!=NULL){
-			if(tmp->machine->name==m->name){
+			if(strcmp(tmp->machine->name,m->name)==0){
 				for(parc *t=tmp; t!=NULL; t=t->next){
 					if(t->next!=NULL)
 						t->machine=t->next->machine;
@@ -730,12 +750,13 @@ int main(void){
 				system("clear");
 				Store(list);
 				stop=0;
-				break; //XALAAT SII DENGA
+				break;
 			case 9:
+				//list=NULL;
 				system("clear");
 				puts("LOOKING FOR BACKUP...\n");
-				system("sleep 3");
-				list =backUp();
+				//system("sleep 3");
+				list=backUp();
 				break;
 			default:
 				system("clear");
