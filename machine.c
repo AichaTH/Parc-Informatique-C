@@ -4,8 +4,6 @@
 #include <ctype.h>  //définit toupper() et tolower()
 #include <stdbool.h> 
 #include<time.h>
-#include <fcntl.h> //define file descriptor manipulation
-#include <unistd.h> //define access to OS API
 
 typedef char* string;
 
@@ -18,7 +16,6 @@ typedef struct machine{
 	bool state; //connecté ou !connecté
 	string *logiciels_client; //liste logiciel client
 	string *logiciels_server;
-	//struct machine *next;	
 }machine; 
 
 //definition structure parc
@@ -39,7 +36,7 @@ bool isOctet(int x){
 void MacSaisi(char mac[6]){
 	int a, b, c, d, e, f, i;
 	do{	
-		i=scanf("%x:%x:%x:%x:%x:%x", &a, &b, &c, &d, &e, &f);
+		i=scanf("%X:%X:%X:%X:%X:%X", &a, &b, &c, &d, &e, &f);
 		if(i<6){
 			puts("INCORRECT INPUT !!");
 			while(getchar()!='\n');
@@ -63,7 +60,7 @@ void IpSaisi(char ip[4]){
 	int a, b, c, d, i;
 	
 	do{
-		i=scanf("%d.%d.%d.%d",&a,&b,&c,&d); //recupere addresse forma a.b.c.d
+		i=scanf("%d.%d.%d.%d",&a,&b,&c,&d); //recupere addresse format a.b.c.d
 		if(i<4){ //verifie addresse complete
 			puts("INCORRECT INPUT !!");
 			while(getchar()!='\n');
@@ -167,7 +164,7 @@ void afficheMacAddr(machine *m){
 	printf("MAC Address:\t");
 	unsigned char *mac=m->MacAddr;
 	for(int i=0; i<6; i++){
-		printf("%x", mac[i]);
+		printf("%X", mac[i]);
 		if(i<5)
 			printf(":");
 	}
@@ -343,11 +340,6 @@ void Store(parc *list){
 	}
 	else
 		printf("FAILED TO CREATE OR OPEN THE STORE FILE");
-	/*while (list != NULL){
-		parc *tmp = list->next;
-		free(list);
-		list = tmp;
-	}*/	
 }
 	
 parc *backUp(){
@@ -360,12 +352,15 @@ parc *backUp(){
 		printf("MEMORY ALLOCATION ERROR !!\n");
 	else{
 		if((file=fopen(storeFile,"rb"))){
+			puts("WELL DONE !!!\n");
+			printf("HERE ARE ALL MACHINES THAT HAD BEEN RESTORED :\n");
+			puts("-----------------------------------------------------------\n");
 			while(fread(m, sizeof(machine), 1, file)>0){
 				if(m!=NULL){
 					afficheName(m);
 					afficheMacAddr(m);
 					afficheIpAddr(m);
-					//afficheLogicielClient(m);
+
 					p->machine=m;
 					p->next=NULL;
 					if(list==NULL)
@@ -375,14 +370,14 @@ parc *backUp(){
 						while(tmp->next!=NULL)
 							tmp=tmp->next;
 						tmp->next=p;
-						//tmp=tmp->next;
-						//tmp->next=NULL;
 					}
 				}
+				else{
+					printf("THERE IS NO MACHINE FOUND IN THE BACKUP\n");
+
+				}
 			}
-			//afficheParc(list);
 			fclose(file);
-			//return list;
 		}
 		else
 		printf("FAILED TO FIND A BACKUP FILE...\n");	
@@ -417,7 +412,7 @@ machine *searchReseau(char ip[4], parc *p){
 	return m;
 }
 
-//fonction qui cherche adresse Rx
+//fonction qui cherche @Rx auquel appartient @ip 
 void ipRx(char ip[4], char mask[4], char ipReseau[4]){
 	for(int i=0; i<4; i++)
 		ipReseau[i]=ip[i] & mask[i]; //ET logique entre les différents bits de l'adresse ip et du masque
@@ -452,7 +447,7 @@ void dhcp(char ip_client[4], char mask_client[4], machine *serveur, parc *p){
 		int j;
 		if(i<4)
 			j= brdcst[i]-ipReseau[i]; //plage @ hote
-		ip_client[i]=ipReseau[i]+1+rand()%j; //choix au hasard
+		ip_client[i]=ipReseau[i]+1+rand()%j; //choix au hasard pour id-Host
 		i++;
 
 		if(i==4){
@@ -571,14 +566,14 @@ void ping(char ip[4], machine *m1, parc *p){
 		ipRx(m1->IpAddr, m1->mask, ipReseau1);
 		ipRx(m2->IpAddr, m2->mask, ipReseau2);
 		if(ipCmp(ipReseau1, ipReseau2)){	//Network-id comparison
-			for(int i=0; i<4; i++){
+			for(int i=1; i<5; i++){
 				printf("%d packets transmitted \n",i);
 				system("sleep 1");
 			}
 				puts("\nPing SUCCESSED !!!\n \nPING STATISTICS ----\n 4 packets transmitted, 4 received, 0% packet loss ");
 		}
 		else{
-			for(int i=0; i<4; i++){
+			for(int i=1; i<5; i++){
 				printf("%d packet transmitted \n",i);
 				system("sleep 1");
 			}
@@ -588,9 +583,11 @@ void ping(char ip[4], machine *m1, parc *p){
 	else{
 		for(int i=0; i<4; i++)
 				puts("ADDRESS UNREACHABLE !!!\n \n");
+				system("sleep 1");
 				puts("PING STATISTICS ----\n 4 packets transmitted, 0 received, 100% packet loss ");	
 		}
 }	
+
 //fonction suprimer machine dans le parc
 parc *deleteMachine(string hostname, parc *p){
 	machine *m =searchMachine(hostname, p);
@@ -627,7 +624,7 @@ int main(void){
 	system("clear");
 	puts("\t\t **************************************************\n");
 	puts("\t\t WELCOME TO OUR C LANGUAGE PROGRAMMATION PROJECT\n");
-	puts("\t\t 					DESIGNED BY \n");
+	puts("\t\t 			DESIGNED BY \n");
 	puts("\t\t 		--> FAMARA BADJI");
 	puts("\t\t 		--> FATOUMATA LAMARANA BARRY\n");
 	puts("\t\t 		--> HAWA MAMADOU DIA");
@@ -636,7 +633,7 @@ int main(void){
 	puts("\t\t 	 	--> ASTOU THIOYE\n");
 	puts("\t\t **************************************************\n\n\n");
 
-	puts("THIS IS ABOUT A SIMULATION OF A COMPUTER INFRASTRUCTURE  WITH SOME FEATURES\n LIKE SOFTWARE INSTALLATION, DHCP REQUEST, PING...\n\n ");
+	puts("THIS IS ABOUT A SIMULATION OF A COMPUTER INFRASTRUCTURE  WITH SOME FEATURES\n LIKE SOFTWARE INSTALLATION, DHCP REQUEST, PING...\n");
 
 	do{
 		if(option!=100) system("clear");
@@ -671,12 +668,12 @@ int main(void){
 					system("clear");
 					afficheMachine(m);
 					int i;
-					puts("1: Ping");
+					puts("1: Ping a machine from this one");
 					puts("2: Quit");
 					scanf("%d", &i);
 					if(i==1){
 						char ip[4];
-						printf("Which Address do you want to to reach ? (format a.b.c.d)\n");
+						printf("Which Address would you like to reach ? (format a.b.c.d)\n");
 						IpSaisi(ip);
 						ping(ip, m, list);
 						break;
@@ -752,10 +749,9 @@ int main(void){
 				stop=0;
 				break;
 			case 9:
-				//list=NULL;
 				system("clear");
 				puts("LOOKING FOR BACKUP...\n");
-				//system("sleep 3");
+				system("sleep 3");
 				list=backUp();
 				break;
 			default:
